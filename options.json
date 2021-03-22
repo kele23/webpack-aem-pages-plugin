@@ -1,0 +1,18 @@
+{
+    "type": "object",
+    "properties": {
+        "repoDir": {
+            "type": "string"
+        },
+        "projectName": {
+            "type": "string"
+        },
+        "destDir": {
+            "type": "string"
+        },
+        "bindings": {
+            "type": "string"
+        }
+    },
+    "required": ["destDir", "projectName", "repoDir"]
+}

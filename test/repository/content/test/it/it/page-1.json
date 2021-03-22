@@ -1,0 +1,24 @@
+{
+    "jcr:primaryType": "cq:Page",
+    "jcr:content": {
+        "jcr:title": "PAGE 1",
+        "sling:resourceType": "test/components/structure/page",
+        "isHomepage": true,
+        "root": {
+            "sling:resourceType": "test/components/layout/parsys",
+            "header": {
+                "sling:resourceType": "test/components/structure/header"
+            },
+            "content": {
+                "sling:resourceType": "test/components/layout/parsys",
+                "banner": {
+                    "sling:resourceType": "test/components/content/banner",
+                    "title": "PAGINA 1"
+                }
+            },
+            "footer": {
+                "sling:resourceType": "test/components/structure/footer"
+            }
+        }
+    }
+}
