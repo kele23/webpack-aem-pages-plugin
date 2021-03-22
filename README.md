@@ -1,2 +1,2 @@
-# webpack-static-pages-plugin
-Webpack plugin to handle HTML static pages and components
+# webpack-aem-pages-plugin
+Webpack plugin to handle AEM static pages and components with webpack
