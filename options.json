@@ -11,7 +11,7 @@
             "type": "string"
         },
         "bindings": {
-            "type": "string"
+            "type": "object"
         }
     },
     "required": ["destDir", "projectName", "repoDir"]

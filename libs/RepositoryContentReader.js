@@ -12,15 +12,12 @@ class RepositoryContentReader {
     async readContents({ compilation }) {
         const pagesFile = glob.sync('**/*.json', { cwd: path.resolve(this.sourceDir, this.rootPage) });
 
-        await Promise.all(
-            pagesFile.map((pageFile) => {
-                const pageFileAbs = path.resolve(this.sourceDir, this.rootPage, pageFile);
-                //add file to dependencies
-                compilation.fileDependencies.add(pageFileAbs);
-
-                return this._readContent(pageFileAbs);
-            })
-        );
+        for (const pageFile of pagesFile) {
+            const pageFileAbs = path.resolve(this.sourceDir, this.rootPage, pageFile);
+            await this._readContent(pageFileAbs);
+            //add file to dependencies
+            compilation.fileDependencies.add(pageFileAbs);
+        }
 
         return this.contents;
     }

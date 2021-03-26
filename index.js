@@ -20,6 +20,7 @@ class WebpackAEMPagesPlugin {
         this.repoDir = options.repoDir;
         this.projectName = options.projectName;
         this.destDir = options.destDir;
+        this.bindings = options.bindings;
     }
 
     /**
@@ -79,7 +80,7 @@ class WebpackAEMPagesPlugin {
             const contents = await reader.readContents(options);
             const resourceResolver = new ResourceResolver(contents);
 
-            const render = new HTLRender(this.repoDir, this.projectName);
+            const render = new HTLRender(this.repoDir, this.projectName, this.bindings);
             await render.loadComponents(options);
 
             const pageResources = resourceResolver.findResources('cq/Page');

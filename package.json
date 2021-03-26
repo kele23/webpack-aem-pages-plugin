@@ -1,14 +1,16 @@
 {
-    "name": "webpack-aem-pages-plugin",
+    "name": "@kele23/webpack-aem-pages-plugin",
     "version": "0.0.1",
     "description": "Webpack AEM pages plugin",
     "main": "index.js",
     "keywords": [
         "webpack",
         "plugin",
-        "static",
+        "aem",
+        "htl",
         "pages"
     ],
+    "repository": "https://github.com/kele23/webpack-aem-pages-plugin",
     "scripts": {
         "test": "webpack --config test/webpack.conf.js",
         "test-serve": "webpack-dev-server --config test/webpack.conf.js"

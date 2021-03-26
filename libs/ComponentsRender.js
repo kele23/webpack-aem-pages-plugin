@@ -16,20 +16,20 @@ class HTLRender {
     async loadComponents({ compilation }) {
         const componentsFile = glob.sync('**/*.html', { cwd: path.resolve(this.sourceDir, this.projectName) });
 
-        Promise.all(
-            componentsFile.map(async (componentFile) => {
-                const componentFileAbs = path.resolve(this.sourceDir, this.projectName, componentFile);
-                const resourceType = path.relative(this.sourceDir, path.dirname(componentFileAbs));
-                const source = fs.readFileSync(componentFileAbs, { encoding: 'utf-8' });
-                const compiler = this._getCompiler(resourceType);
-                this.componentsCompiled[componentFileAbs] = await compiler.compileToFunction(source);
-                //add file to dependencies
-                compilation.fileDependencies.add(componentFileAbs);
-            })
-        );
+        for (const componentFile of componentsFile) {
+            const componentFileAbs = path.resolve(this.sourceDir, this.projectName, componentFile);
+            const resourceType = path.relative(this.sourceDir, path.dirname(componentFileAbs));
+            const source = fs.readFileSync(componentFileAbs, { encoding: 'utf-8' });
+            const compiler = this._getCompiler(resourceType);
+            this.componentsCompiled[componentFileAbs] = await compiler.compileToFunction(source);
+            //add file to dependencies
+            compilation.fileDependencies.add(componentFileAbs);
+        }
+
     }
 
     async rendPage(pageResource, { logger }) {
+
         const global = {
             pageProperties: pageResource.getChild('jcr:content').valueMap,
             wcmmode: { disabled: true },
@@ -49,6 +49,11 @@ class HTLRender {
         return html;
     }
 
+    /**
+     * Get the compiler object base on resource type
+     * @param {string} resourceType
+     * @returns {Compiler} compiler
+     */
     _getCompiler(resourceType) {
         const runtimeVars = ['resource', 'properties', 'wcmmode', 'model', 'pageProperties', 'resourceResolver'];
         for (const binding in this.bindings) {
@@ -56,18 +61,16 @@ class HTLRender {
                 runtimeVars.push(binding);
             }
         }
-        return new Compiler().withScriptResolver(this._makeScriptResolver(resourceType)).withRuntimeVar(runtimeVars);
+        return new Compiler()
+            .withScriptResolver(this._makeScriptResolver(resourceType))
+            .withModuleImportGenerator(this._makeModuleImportGenerator(resourceType))
+            .withRuntimeVar(runtimeVars);
     }
 
-    async _rendFile(componentAbsPath, global) {
-        const func = this.componentsCompiled[componentAbsPath];
-        const runtime = new Runtime()
-            .withResourceLoader(this._makeResourceLoader())
-            .withIncludeHandler(this._makeIncludeHandler())
-            .setGlobal(global);
-        return await func(runtime);
-    }
-
+    /**
+     * Load a resource, launching same name html of the resource type
+     * @returns
+     */
     _makeResourceLoader() {
         return async (runtime, name) => {
             const parentGlobals = runtime.globals;
@@ -85,7 +88,7 @@ class HTLRender {
 
             for (const binding in this.bindings) {
                 if (typeof this.bindings[binding] == 'function') {
-                    this.bindings[binding](globals);
+                    globals[binding] = this.bindings[binding](globals);
                 }
             }
 
@@ -95,33 +98,52 @@ class HTLRender {
         };
     }
 
+    async _rendFile(componentAbsPath, global) {
+        const func = this.componentsCompiled[componentAbsPath];
+        const runtime = new Runtime()
+            .withResourceLoader(this._makeResourceLoader())
+            .withIncludeHandler(this._makeIncludeHandler())
+            .setGlobal(global);
+        return await func(runtime);
+    }
+
     _makeIncludeHandler() {
-        return async (runtime, file) => {
+        return async (runtime, file, options) => {
+            const absFile = path.resolve(file);
             const globals = runtime.globals;
-            const absFile = path.resolve(this.sourceDir, file);
             return await this._rendFile(absFile, globals);
         };
     }
 
-    _makeScriptResolver(componentPath) {
+    /**
+     * Make a script resolver, if not found it resolves to a dummy ( empty ) script
+     * @param {string} resourceType
+     * @returns {(baseDir, uri) => string} The resolve script
+     */
+    _makeScriptResolver(resourceType) {
         return async (baseDir, uri) => {
-            return path.relative(this.sourceDir, path.resolve(this.sourceDir, componentPath, baseDir, uri));
+            const absPath = path.resolve(this.sourceDir, resourceType, baseDir, uri);
+            if (fs.existsSync(absPath)) return absPath;
+            return path.resolve(__dirname, 'data', 'dummy-htl.html');
         };
     }
 
-    async _getResourceModel(resource, globals) {
-        const componentPath = path.resolve(this.sourceDir, resource.resourceType);
-        const modelPath = path.join(componentPath, `model.js`);
-        if (!fs.existsSync(modelPath)) return null;
-        return await this._readModelJs(modelPath, globals);
+    _makeModuleImportGenerator(resourceType) {
+        return HTLRender.defaultModuleGenerator;
     }
 
-    async _readModelJs(filePath, globals) {
-        if (!filePath) {
-            throw new Error('The filePath is empty');
-        }
+    /**
+     *
+     * @param {*} resource
+     * @param {*} globals
+     * @returns
+     */
+    async _getResourceModel(resource, globals) {
+        const componentPath = path.resolve(this.sourceDir, resource.resourceType);
+        const modelPath = path.join(componentPath, `@model.js`);
+        if (!fs.existsSync(modelPath)) return null;
 
-        const source = fs.readFileSync(filePath, { encoding: 'utf-8' });
+        const source = fs.readFileSync(modelPath, { encoding: 'utf-8' });
         const vmContext = vm.createContext({
             use: (fn) => {
                 return fn.call(globals);
@@ -131,6 +153,44 @@ class HTLRender {
 
         const vmScript = new vm.Script(source);
         return vmScript.runInContext(vmContext);
+    }
+
+    /**
+     * Generates the module import statement.
+     *
+     * @param {string} baseDir the base directory (usually cwd)
+     * @param {string} varName the variable name of the module to be defined.
+     * @param {string} moduleId the id of the module
+     * @returns {string} the import string.
+     */
+    static defaultModuleGenerator(baseDir, varName, moduleId) {
+        // make path relative to output directory
+        if (path.isAbsolute(moduleId)) {
+            // eslint-disable-next-line no-param-reassign
+            moduleId = `.${path.sep}${path.relative(baseDir, moduleId)}`;
+            if (path.sep === '\\') {
+                // nodejs on windows doesn't like relative paths with windows path separators
+                // eslint-disable-next-line no-param-reassign
+                moduleId = moduleId.replace(/\\/, '/');
+            }
+        } else {
+            moduleId = path.resolve(__dirname, 'data', 'dummy-model.js');
+        }
+        const source = fs.readFileSync(moduleId, { encoding: 'utf-8' });
+        return `const ${varName} = () => {class XX {
+            use: () => {
+                const source = ``${source}``;
+                const vmContext = vm.createContext({
+                    use: (fn) => {
+                        return fn.call(globals);
+                    },
+                    console: console,
+                });
+
+                const vmScript = new vm.Script(source);
+                return vmScript.runInContext(vmContext);
+            },
+        }}`;
     }
 }
 
