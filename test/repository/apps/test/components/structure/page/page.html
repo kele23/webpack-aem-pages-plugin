@@ -1,14 +1,14 @@
-<html>
+<html data-sly-use.page="com.adobe.cq.wcm.core.components.models.Page.js">
     <head>
         <meta charset="utf-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
         <sly data-sly-use.tpl="customheaderlibs.html"></sly>
-        <sly data-sly-call="${tpl.customheaderlibs @ title=properties['jcr:title']}"></sly>
+        <sly data-sly-call="${tpl.customheaderlibs @ title=page.title}"></sly>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     </head>
 
-    <body data-sly-use.page="com.adobe.Page">
-        <sly data-sly-include="./body.html"></sly>
-        <script type="text/javascript" src="${model.script}" async></script>
+    <body >
+        <sly data-sly-include="body.html"></sly>
+        <script type="text/javascript" src="${model.script @ context='unsafe'}" async></script>
     </body>
 </html>

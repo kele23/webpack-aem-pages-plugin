@@ -37,6 +37,11 @@ module.exports = {
             repoDir: path.resolve(src, 'repository'),
             projectName: 'test',
             destDir: dist,
+            bindings: {
+                aktComponent: async () => {
+                    return { ola: 'ola binding!' };
+                },
+            },
         }),
     ],
 };

@@ -3,20 +3,22 @@ const fs = require('fs');
 const path = require('path');
 
 class RepositoryContentReader {
-    constructor(sourceDir, projectName) {
+    constructor(sourceDir, projectName, { compilation, logger }) {
         this.sourceDir = sourceDir;
         this.rootPage = 'content/' + projectName;
+        this.compilation = compilation;
+        this.logger = logger;
         this.contents = {};
     }
 
-    async readContents({ compilation }) {
+    async readContents() {
         const pagesFile = glob.sync('**/*.json', { cwd: path.resolve(this.sourceDir, this.rootPage) });
 
         for (const pageFile of pagesFile) {
             const pageFileAbs = path.resolve(this.sourceDir, this.rootPage, pageFile);
             await this._readContent(pageFileAbs);
             //add file to dependencies
-            compilation.fileDependencies.add(pageFileAbs);
+            this.compilation.fileDependencies.add(pageFileAbs);
         }
 
         return this.contents;

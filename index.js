@@ -3,9 +3,12 @@ const schema = require('./options.json');
 //const glob = require('glob');
 const path = require('path');
 const { sources } = require('webpack');
+
+//plugin classes
 const RepositoryContentReader = require('./libs/RepositoryContentReader');
-const HTLRender = require('./libs/ComponentsRender');
-const ResourceResolver = require('./libs/resources/ResourceResolver');
+const HTLRender = require('./libs/HTLRender');
+const BindingsProvider = require('./libs/BindingsProvider');
+const ResourceResolver = require('./libs/ResourceResolver');
 
 class WebpackAEMPagesPlugin {
     /**
@@ -31,15 +34,15 @@ class WebpackAEMPagesPlugin {
         const pluginName = this.constructor.name;
 
         compiler.hooks.thisCompilation.tap(pluginName, (compilation) => {
-            const logger = compilation.getLogger('static-pages-plugin');
+            const logger = compilation.getLogger('webpack-aem-pages-plugin');
 
             compilation.hooks.processAssets.tapAsync(
                 {
-                    name: 'static-pages-plugin',
+                    name: 'webpack-aem-pages-plugin',
                     stage: compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONS,
                 },
                 async (saf, callback) => {
-                    logger.log('Starting creating static pages....');
+                    logger.log('Starting creating pages....');
                     await this.process(compilation);
                     logger.log('Finished creating pages');
                     callback();
@@ -50,7 +53,7 @@ class WebpackAEMPagesPlugin {
                 compilation.hooks.statsPrinter.tap(pluginName, (stats) => {
                     stats.hooks.print
                         .for('asset.info.created')
-                        .tap('static-pages-plugin', (created, { green, formatFlag }) =>
+                        .tap('webpack-aem-pages-plugin', (created, { green, formatFlag }) =>
                             // eslint-disable-next-line no-undefined
                             created ? green(formatFlag('created')) : undefined
                         );
@@ -64,8 +67,8 @@ class WebpackAEMPagesPlugin {
      * @param {Compilation} compilation
      */
     async process(compilation) {
-        const cache = compilation.getCache('StaticPagesPlugin');
-        const logger = compilation.getLogger('static-pages-plugin');
+        const cache = compilation.getCache('WebpackAemPagesPlugin');
+        const logger = compilation.getLogger('webpack-aem-pages-plugin');
 
         const options = {
             cache,
@@ -75,18 +78,18 @@ class WebpackAEMPagesPlugin {
         };
 
         try {
-            //await this.render.readComponents(options);
-            const reader = new RepositoryContentReader(this.repoDir, this.projectName);
-            const contents = await reader.readContents(options);
+            //load repository content reader and make HTL Render
+            const reader = new RepositoryContentReader(this.repoDir, this.projectName, options);
+            const render = new HTLRender(this.repoDir, this.projectName, new BindingsProvider(this.bindings, options), options);
+
+            const [contents] = await Promise.all([reader.readContents(), render.loadComponents()]);
             const resourceResolver = new ResourceResolver(contents);
 
-            const render = new HTLRender(this.repoDir, this.projectName, this.bindings);
-            await render.loadComponents(options);
-
+            //rend all pages
             const pageResources = resourceResolver.findResources('cq/Page');
             const renderedPages = [];
             for (const pageResource of pageResources) {
-                const pageHtml = await render.rendPage(pageResource, options);
+                const pageHtml = await render.rendPage(pageResource);
                 renderedPages.push({
                     fileName: `${pageResource.path}.html`,
                     absoluteFilename: path.resolve(this.destDir, `${pageResource.path}.html`),
@@ -94,6 +97,7 @@ class WebpackAEMPagesPlugin {
                 });
             }
 
+            //emit assets pages
             for (const renderedPage of renderedPages) {
                 const existingAsset = compilation.getAsset(renderedPage.fileName);
                 if (existingAsset) return;
