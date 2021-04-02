@@ -50,6 +50,7 @@ class HTLRender {
             pageProperties: pageResource.getChild('jcr:content').valueMap,
             wcmmode: { disabled: true },
             resource: pageResource,
+            resourceResolver: pageResource.resourceResolver,
             properties: pageResource.valuMap,
         };
 
@@ -140,11 +141,19 @@ class HTLRender {
      * @returns {async (runtime, name) => string} Resource Loader
      */
     _makeResourceLoader() {
-        return async (runtime, name) => {
+        return async (runtime, name, options) => {
             const parentGlobals = runtime.globals;
             const parent = parentGlobals.resource;
 
-            const resource = parent.getChild(name);
+            let resource = parent.getChild(name);
+            if (!resource && options.resourceType) {
+                resource = parentGlobals.resourceResolver.makeSynteticResource(
+                    {},
+                    parent.path + '/' + name,
+                    options.resourceType
+                );
+            }
+
             let globals = {
                 resourceResolver: parentGlobals.resourceResolver,
                 pageProperties: parentGlobals.pageProperties,

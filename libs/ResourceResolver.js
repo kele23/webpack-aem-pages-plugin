@@ -26,7 +26,8 @@ class ResourceResolver {
      */
     getChild(resource, name) {
         const resourcePath = resource.path + '/' + name;
-        return this._makeResource(resourcePath, this.contents[resourcePath]);
+        if (this.contents[resourcePath]) return this._makeResource(resourcePath, this.contents[resourcePath]);
+        return null;
     }
 
     /**
@@ -73,6 +74,18 @@ class ResourceResolver {
             }
         }
         return result;
+    }
+
+    /**
+     * Make a new Syntetic resource
+     * @param {Object} content
+     * @param {string} resourcePath
+     * @param {string} resourceType
+     */
+    makeSynteticResource(content, resourcePath, resourceType) {
+        this.contents[resourcePath] = content;
+        this.contents[resourcePath]['sling:resourceType'] = resourceType;
+        return this._makeResource(resourcePath, this.contents[resourcePath]);
     }
 
     /**
