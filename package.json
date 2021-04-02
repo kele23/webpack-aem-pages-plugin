@@ -1,6 +1,6 @@
 {
     "name": "@kele23/webpack-aem-pages-plugin",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Webpack AEM pages plugin",
     "main": "index.js",
     "keywords": [
