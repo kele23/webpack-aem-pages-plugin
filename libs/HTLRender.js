@@ -33,9 +33,11 @@ class HTLRender {
             const resourceType = path.relative(this.sourceDir, path.dirname(componentFileAbs));
             const source = fs.readFileSync(componentFileAbs, { encoding: 'utf-8' });
             const compiler = this._getCompiler(resourceType);
-            this.componentsCompiled[componentFileAbs] = await compiler.compileToFunction(source);
             //add file to dependencies
             this.compilation.fileDependencies.add(componentFileAbs);
+
+            //compile file
+            this.componentsCompiled[componentFileAbs] = await compiler.compileToFunction(source);
         }
     }
 
@@ -145,7 +147,14 @@ class HTLRender {
             const parentGlobals = runtime.globals;
             const parent = parentGlobals.resource;
 
-            let resource = parent.getChild(name);
+            const nameSplit = name.split('.');
+            const resourceName = nameSplit[0];
+            let selectors = null;
+            if(nameSplit.length > 1){
+                selectors = nameSplit.slice(1).join(".");
+            }
+
+            let resource = parent.getChild(resourceName);
             if (!resource && options.resourceType) {
                 resource = parentGlobals.resourceResolver.makeSynteticResource(
                     {},
@@ -169,7 +178,8 @@ class HTLRender {
 
             const componentPath = path.resolve(this.sourceDir, resource.resourceType);
             const componentName = path.basename(componentPath);
-            return await this._rendFile(path.join(componentPath, `${componentName}.html`), globals);
+            const componentHtmlFileAbs = selectors == null || selectors.length == 0 ? path.join(componentPath, `${componentName}.html`) : path.join(componentPath, `${selectors}.html`);
+            return await this._rendFile(componentHtmlFileAbs, globals);
         };
     }
 

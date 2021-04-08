@@ -19,6 +19,9 @@
             "footer": {
                 "sling:resourceType": "test/components/structure/footer"
             }
+        },
+        "backdrop": {
+            "sling:resourceType": "test/components/structure/backdrop"
         }
     }
 }
