@@ -109,7 +109,11 @@ class HTLRender {
      */
     _makeScriptResolver(resourceType) {
         return async (baseDir, uri) => {
-            return path.resolve(this.sourceDir, resourceType, baseDir, uri);
+            let absPath = path.resolve(this.sourceDir, resourceType, baseDir, uri);
+            if (fs.existsSync(absPath)) return absPath;
+            absPath = path.resolve(this.sourceDir, baseDir, uri);
+            if (fs.existsSync(absPath)) return absPath;
+            return path.resolve(this.sourceDir, uri);
         };
     }
 
@@ -150,8 +154,8 @@ class HTLRender {
             const nameSplit = name.split('.');
             const resourceName = nameSplit[0];
             let selectors = null;
-            if(nameSplit.length > 1){
-                selectors = nameSplit.slice(1).join(".");
+            if (nameSplit.length > 1) {
+                selectors = nameSplit.slice(1).join('.');
             }
 
             let resource = parent.getChild(resourceName);
@@ -178,7 +182,10 @@ class HTLRender {
 
             const componentPath = path.resolve(this.sourceDir, resource.resourceType);
             const componentName = path.basename(componentPath);
-            const componentHtmlFileAbs = selectors == null || selectors.length == 0 ? path.join(componentPath, `${componentName}.html`) : path.join(componentPath, `${selectors}.html`);
+            const componentHtmlFileAbs =
+                selectors == null || selectors.length == 0
+                    ? path.join(componentPath, `${componentName}.html`)
+                    : path.join(componentPath, `${selectors}.html`);
             return await this._rendFile(componentHtmlFileAbs, globals);
         };
     }
