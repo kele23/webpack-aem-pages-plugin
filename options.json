@@ -12,6 +12,10 @@
         },
         "bindings": {
             "type": "object"
+        },
+        "defaultModelName": {
+            "type": "string",
+            "default": "model"
         }
     },
     "required": ["destDir", "projectName", "repoDir"]

@@ -8,9 +8,10 @@ class BindingsProvider {
      * @param {Object} bindings Custom bindings provided in plugin configuration
      * @param {Object} compilationOptions Compilation options
      */
-    constructor(bindings, options) {
+    constructor(bindings, defaultModelName, options) {
         this.bindings = bindings;
         this.options = options;
+        this.defaultModelName = defaultModelName;
         this.compilation = options.compilation;
     }
 
@@ -18,7 +19,7 @@ class BindingsProvider {
      * Get bindings names
      */
     get names() {
-        let result = ['model'];
+        let result = [this.defaultModelName];
         if (this.bindings) result = result.concat(Object.keys(this.bindings));
         return result;
     }
@@ -37,7 +38,7 @@ class BindingsProvider {
         if (fs.existsSync(absPath)) {
             this.compilation.fileDependencies.add(absPath);
             const Model = JsUseProvider(absPath);
-            result['model'] = await new Model().use(currentGlobals);
+            result[this.defaultModelName] = await new Model().use(currentGlobals);
         }
         if (this.bindings) {
             for (const key in this.bindings) {

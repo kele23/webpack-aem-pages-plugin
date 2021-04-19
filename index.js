@@ -24,6 +24,7 @@ class WebpackAEMPagesPlugin {
         this.projectName = options.projectName;
         this.destDir = options.destDir;
         this.bindings = options.bindings;
+        this.defaultModelName = options.defaultModelName;
     }
 
     /**
@@ -80,7 +81,12 @@ class WebpackAEMPagesPlugin {
         try {
             //load repository content reader and make HTL Render
             const reader = new RepositoryContentReader(this.repoDir, this.projectName, options);
-            const render = new HTLRender(this.repoDir, this.projectName, new BindingsProvider(this.bindings, options), options);
+            const render = new HTLRender(
+                this.repoDir,
+                this.projectName,
+                new BindingsProvider(this.bindings, this.defaultModelName, options),
+                options
+            );
 
             const [contents] = await Promise.all([reader.readContents(), render.loadComponents()]);
             const resourceResolver = new ResourceResolver(contents);
