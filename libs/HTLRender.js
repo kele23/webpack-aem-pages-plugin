@@ -37,7 +37,12 @@ class HTLRender {
             this.compilation.fileDependencies.add(componentFileAbs);
 
             //compile file
-            this.componentsCompiled[componentFileAbs] = await compiler.compileToFunction(source);
+            try {
+                this.componentsCompiled[componentFileAbs] = await compiler.compileToFunction(source);
+            } catch (error) {
+                this.logger.error('Cannot compile HTL file ' + componentFileAbs);
+                this.logger.error(error);
+            }
         }
     }
 
@@ -80,7 +85,12 @@ class HTLRender {
             .withResourceLoader(this._makeResourceLoader())
             .withIncludeHandler(this._makeIncludeHandler())
             .setGlobal(global);
-        return await func(runtime);
+        try {
+            return await func(runtime);
+        } catch (error) {
+            this.logger.error('Cannot execute HTL file ' + componentAbsPath);
+            this.logger.error(error);
+        }
     }
 
     ////////////////////////////////////////// COMPILATION
