@@ -124,9 +124,11 @@ class WebpackAEMPagesPlugin {
                 for (const contentRes of contentResources) {
                     const cntHtml = await render.rendComponent(contentRes, this.renderComponentsSelector);
                     if (cntHtml == null) continue;
+                    const selector = this.renderComponentsSelector ? '.' + this.renderComponentsSelector : '';
+                    console.log(selector);
                     renderedResources.push({
-                        fileName: `${contentRes.path}.html`,
-                        absoluteFilename: path.resolve(this.destDir, `${contentRes.path}.html`),
+                        fileName: `${contentRes.path}${selector}.html`,
+                        absoluteFilename: path.resolve(this.destDir, `${contentRes.path}${selector}.html`),
                         html: cntHtml,
                     });
                 }
