@@ -69,8 +69,14 @@ class ResourceResolver {
     findResources(resourceType) {
         const result = [];
         for (const contentPath in this.contents) {
-            if (this._getResourceType(this.contents[contentPath]) == resourceType) {
-                result.push(this._makeResource(contentPath, this.contents[contentPath]));
+            if (resourceType instanceof RegExp) {
+                if (resourceType.test(this._getResourceType(this.contents[contentPath]))) {
+                    result.push(this._makeResource(contentPath, this.contents[contentPath]));
+                }
+            } else {
+                if (this._getResourceType(this.contents[contentPath]) == resourceType) {
+                    result.push(this._makeResource(contentPath, this.contents[contentPath]));
+                }
             }
         }
         return result;

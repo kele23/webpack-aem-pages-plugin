@@ -24,7 +24,9 @@ class WebpackAEMPagesPlugin {
         this.projectName = options.projectName;
         this.destDir = options.destDir;
         this.bindings = options.bindings;
-        this.defaultModelName = options.defaultModelName;
+        this.defaultModelName = options.defaultModelName || 'model';
+        this.renderComponents = options.renderComponents;
+        this.renderComponentsSelector = options.renderComponentsSelector || 'loader';
     }
 
     /**
@@ -112,6 +114,37 @@ class WebpackAEMPagesPlugin {
                 compilation.emitAsset(renderedPage.fileName, new sources.RawSource(renderedPage.html, true), {
                     ...info,
                 });
+            }
+
+            //rend all components resources
+            if (this.renderComponents) {
+                const regex = new RegExp(this.renderComponents);
+                const contentResources = resourceResolver.findResources(regex);
+                const renderedResources = [];
+                for (const contentRes of contentResources) {
+                    const cntHtml = await render.rendComponent(contentRes, this.renderComponentsSelector);
+                    if (cntHtml == null) continue;
+                    renderedResources.push({
+                        fileName: `${contentRes.path}.html`,
+                        absoluteFilename: path.resolve(this.destDir, `${contentRes.path}.html`),
+                        html: cntHtml,
+                    });
+                }
+
+                //emit components files
+                for (const renderedComponent of renderedResources) {
+                    const existingAsset = compilation.getAsset(renderedComponent.fileName);
+                    if (existingAsset) return;
+
+                    const info = { created: true };
+                    compilation.emitAsset(
+                        renderedComponent.fileName,
+                        new sources.RawSource(renderedComponent.html, true),
+                        {
+                            ...info,
+                        }
+                    );
+                }
             }
         } catch (error) {
             logger.error(error);

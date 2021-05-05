@@ -16,6 +16,13 @@
         "defaultModelName": {
             "type": "string",
             "default": "model"
+        },
+        "renderComponents": {
+            "type": "string"
+        },
+        "renderComponentsSelector": {
+            "type": "string",
+            "default": "loader"
         }
     },
     "required": ["destDir", "projectName", "repoDir"]

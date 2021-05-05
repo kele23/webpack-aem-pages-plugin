@@ -58,7 +58,7 @@ class HTLRender {
             wcmmode: { disabled: true },
             resource: pageResource,
             resourceResolver: pageResource.resourceResolver,
-            properties: pageResource.valuMap,
+            properties: pageResource.valueMap,
         };
 
         const compiler = this._getCompiler(pageResource.resourceType);
@@ -70,6 +70,40 @@ class HTLRender {
         const html = await func(runtime);
 
         this.logger.info(`Rendered page ${pageResource.path}`);
+        return html;
+    }
+
+    /**
+     * Render a page resource
+     * @param {Resource} pageResource
+     * @param {Object} compilationOptions
+     * @returns {string} HTML
+     */
+    async rendComponent(componentResource, selectors) {
+        const componentPath = path.resolve(this.sourceDir, componentResource.resourceType);
+        const componentName = path.basename(componentPath);
+        const componentHtmlFileAbs =
+            selectors == null || selectors.length == 0
+                ? path.join(componentPath, `${componentName}.html`)
+                : path.join(componentPath, `${selectors}.html`);
+        if (!fs.existsSync(componentHtmlFileAbs)) {
+            return null;
+        }
+
+        let global = {
+            wcmmode: { disabled: true },
+            resource: componentResource,
+            resourceResolver: componentResource.resourceResolver,
+            properties: componentResource.valueMap,
+        };
+
+        global = {
+            ...global,
+            ...(await this.bindings.provide(this.sourceDir, componentResource, global)),
+        };
+
+        const html = await this._rendFile(componentHtmlFileAbs, global);
+        this.logger.info(`Rendered component ${componentResource.path}`);
         return html;
     }
 
