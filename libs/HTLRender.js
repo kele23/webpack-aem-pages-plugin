@@ -103,7 +103,7 @@ class HTLRender {
         };
 
         const html = await this._rendFile(componentHtmlFileAbs, global);
-        this.logger.info(`Rendered component ${componentResource.path}`);
+        this.logger.info(`Rendered component ${componentResource.path} with selectors ${selectors}`);
         return html;
     }
 

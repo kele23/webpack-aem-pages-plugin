@@ -26,7 +26,7 @@ class WebpackAEMPagesPlugin {
         this.bindings = options.bindings;
         this.defaultModelName = options.defaultModelName || 'model';
         this.renderComponents = options.renderComponents;
-        this.renderComponentsSelector = options.renderComponentsSelector || 'loader';
+        this.renderComponentsSelector = options.renderComponentsSelector || ['loader'];
     }
 
     /**
@@ -121,16 +121,17 @@ class WebpackAEMPagesPlugin {
                 const regex = new RegExp(this.renderComponents);
                 const contentResources = resourceResolver.findResources(regex);
                 const renderedResources = [];
-                for (const contentRes of contentResources) {
-                    const cntHtml = await render.rendComponent(contentRes, this.renderComponentsSelector);
-                    if (cntHtml == null) continue;
-                    const selector = this.renderComponentsSelector ? '.' + this.renderComponentsSelector : '';
-                    console.log(selector);
-                    renderedResources.push({
-                        fileName: `${contentRes.path}${selector}.html`,
-                        absoluteFilename: path.resolve(this.destDir, `${contentRes.path}${selector}.html`),
-                        html: cntHtml,
-                    });
+                for (const rendSelector of this.renderComponentsSelector) {
+                    for (const contentRes of contentResources) {
+                        const cntHtml = await render.rendComponent(contentRes, rendSelector);
+                        if (cntHtml == null) continue;
+                        const selector = this.renderComponentsSelector ? '.' + rendSelector : '';
+                        renderedResources.push({
+                            fileName: `${contentRes.path}${selector}.html`,
+                            absoluteFilename: path.resolve(this.destDir, `${contentRes.path}${selector}.html`),
+                            html: cntHtml,
+                        });
+                    }
                 }
 
                 //emit components files
