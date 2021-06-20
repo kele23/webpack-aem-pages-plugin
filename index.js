@@ -22,6 +22,7 @@ class WebpackAEMPagesPlugin {
 
         this.repoDir = options.repoDir;
         this.projectName = options.projectName;
+        this.appsFolderName = options.appsFolderName || this.projectName;
         this.destDir = options.destDir;
         this.bindings = options.bindings;
         this.defaultModelName = options.defaultModelName || 'model';
@@ -85,7 +86,7 @@ class WebpackAEMPagesPlugin {
             const reader = new RepositoryContentReader(this.repoDir, this.projectName, options);
             const render = new HTLRender(
                 this.repoDir,
-                this.projectName,
+                this.appsFolderName,
                 new BindingsProvider(this.bindings, this.defaultModelName, options),
                 options
             );
