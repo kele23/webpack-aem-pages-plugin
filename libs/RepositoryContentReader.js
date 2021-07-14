@@ -1,6 +1,7 @@
 const glob = require('glob');
 const fs = require('fs');
 const path = require('path');
+const slash = require('slash');
 
 class RepositoryContentReader {
     constructor(sourceDir, projectName, { compilation, logger }) {
@@ -38,7 +39,7 @@ class RepositoryContentReader {
             contentName != 'index' ? `/${contentName}` : ''
         );
 
-        this._explode(content, contentPath);
+        this._explode(content, slash(contentPath));
     }
 
     _explode(content, contentPath) {
