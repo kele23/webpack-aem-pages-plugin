@@ -191,10 +191,13 @@ class HTLRender {
      * @returns {async (runtime, name) => string} Resource Loader
      */
     _makeResourceLoader() {
-        return async (runtime, name, options) => {
+        return async (runtime, oName, options) => {
             const parentGlobals = runtime.globals;
             const parent = parentGlobals.resource;
+            const resourceResolver = parentGlobals.resourceResolver;
 
+            const absolute = oName.startsWith('/');
+            const name = absolute ? path.basename(oName) : oName;
             const nameSplit = name.split('.');
             const resourceName = nameSplit[0];
             let selectors = null;
@@ -202,17 +205,20 @@ class HTLRender {
                 selectors = nameSplit.slice(1).join('.');
             }
 
-            let resource = parent.getChild(resourceName);
+            let resource;
+            if (absolute) {
+                const dirname = path.dirname(oName);
+                resource = resourceResolver.getResource(dirname + '/' + resourceName);
+            } else {
+                resource = parent.getChild(resourceName);
+            }
+
             if (!resource && options.resourceType) {
-                resource = parentGlobals.resourceResolver.makeSynteticResource(
-                    {},
-                    parent.path + '/' + name,
-                    options.resourceType
-                );
+                resource = resourceResolver.makeSynteticResource({}, parent.path + '/' + name, options.resourceType);
             }
 
             let globals = {
-                resourceResolver: parentGlobals.resourceResolver,
+                resourceResolver: resourceResolver,
                 pageProperties: parentGlobals.pageProperties,
                 wcmmode: parentGlobals.wcmmode,
                 resource: resource,
