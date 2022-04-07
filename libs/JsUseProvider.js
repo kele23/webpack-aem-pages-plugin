@@ -13,6 +13,7 @@ module.exports = function (path) {
                     return fn.call(globals);
                 },
                 console: console,
+                require: require
             });
 
             const vmScript = new vm.Script(source);

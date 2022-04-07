@@ -31,13 +31,13 @@ class HTLRender {
         for (const componentFile of componentsFile) {
             const componentFileAbs = path.resolve(this.sourceDir, this.projectName, componentFile);
             const resourceType = path.relative(this.sourceDir, path.dirname(componentFileAbs));
-            const source = fs.readFileSync(componentFileAbs, { encoding: 'utf-8' });
-            const compiler = this._getCompiler(resourceType);
-            //add file to dependencies
-            this.compilation.fileDependencies.add(componentFileAbs);
 
-            //compile file
             try {
+                const source = fs.readFileSync(componentFileAbs, { encoding: 'utf-8' });
+                const compiler = this._getCompiler(resourceType);
+                //add file to dependencies
+                this.compilation.fileDependencies.add(componentFileAbs);
+                //compile file
                 this.componentsCompiled[componentFileAbs] = await compiler.compileToFunction(source);
             } catch (error) {
                 this.logger.error('Cannot compile HTL file ' + componentFileAbs);
